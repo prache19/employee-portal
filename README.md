@@ -119,6 +119,7 @@ All endpoints are under `/api`. Auth required unless noted.
 
 ## Docs
 
+- [`docs/Overview.md`](docs/Overview.md) — plain-English explanation of what the portal does
 - [`docs/PLAN.md`](docs/PLAN.md) — implementation plan
 - [`docs/TESTING.md`](docs/TESTING.md) — automated test commands + API probes
 - [`docs/MANUAL_TESTING.md`](docs/MANUAL_TESTING.md) — manual QA checklist
