@@ -7,6 +7,16 @@ services:
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
       # Same-origin behind Caddy: the browser only sees https://${SITE_DOMAIN}.
       CORS_ORIGIN: "https://${SITE_DOMAIN}"
+      # Public URL used to build links inside payslip-notification emails.
+      PORTAL_URL: "https://${SITE_DOMAIN}"
+      # SMTP for payslip notifications. Leave SMTP_HOST blank to disable
+      # outgoing email (the mailer will log "would send" instead).
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASS: "${SMTP_PASS:-}"
+      SMTP_FROM: "${SMTP_FROM:-Employee Portal <no-reply@employeeportal.local>}"
+      SMTP_SECURE: "${SMTP_SECURE:-false}"
     deploy:
       resources:
         limits:

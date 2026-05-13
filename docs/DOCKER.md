@@ -60,8 +60,14 @@ On subsequent restarts the seed is skipped, so any data you added (new employees
 | --- | --- | --- |
 | frontend (nginx) | 80 | **8081** |
 | backend (express) | 4000 | *(not published — only reachable through the internal docker network)* |
+| mailhog (SMTP) | 1025 | **1025** *(dev only — wired automatically by `docker-compose.override.yml`)* |
+| mailhog (Web UI) | 8025 | **8025** |
 
 Change `8081` in `docker-compose.yml` (both the `ports:` mapping and the `CORS_ORIGIN` env var on the backend) if you need a different host port.
+
+## Email notifications (Mailhog)
+
+`docker compose up` starts a [Mailhog](https://github.com/mailhog/MailHog) container alongside the app and points the backend at it. Any payslip-upload notification email is captured by Mailhog instead of being delivered, and viewable at **http://localhost:8025** — useful for verifying the email content during manual testing without sending real mail. In production the prod compose passes through real `SMTP_*` env vars instead.
 
 ## Volumes
 

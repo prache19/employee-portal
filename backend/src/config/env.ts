@@ -22,6 +22,18 @@ const schema = z.object({
   JWT_REFRESH_TTL: z.string().default('7d'),
   UPLOAD_DIR: z.string().default('./uploads'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+
+  // Public URL of the frontend, used to build links in outgoing emails.
+  PORTAL_URL: z.string().url().default('http://localhost:8081'),
+
+  // SMTP — all optional. When SMTP_HOST is unset the mailer logs to stdout
+  // instead of attempting delivery, so dev without docker still works.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default('Employee Portal <no-reply@employeeportal.local>'),
+  SMTP_SECURE: z.coerce.boolean().default(false),
 });
 
 const parsed = schema.safeParse(process.env);

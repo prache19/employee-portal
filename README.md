@@ -91,6 +91,8 @@ See [`.env.example`](.env.example). Key values:
 - `UPLOAD_DIR` — where payslip PDFs are stored (default `./uploads`).
 - `CORS_ORIGIN` — comma-separated allowed origins for the API.
 - `VITE_API_BASE_URL` — frontend → backend API URL.
+- `PORTAL_URL` — public URL of the frontend; used to build links inside payslip-notification emails.
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` / `SMTP_SECURE` — optional. When `SMTP_HOST` is set, the backend emails the employee with a link to `/finance` after each payslip upload. Leave `SMTP_HOST` blank to disable (the mailer logs "would send" instead). `docker compose up` auto-wires a Mailhog catcher at http://localhost:8025.
 
 ## API surface
 
@@ -125,6 +127,7 @@ All endpoints are under `/api`. Auth required unless noted.
 - [`docs/MANUAL_TESTING.md`](docs/MANUAL_TESTING.md) — manual QA checklist
 - [`docs/DOCKER.md`](docs/DOCKER.md) — full docker compose guide
 - [`docs/Deployment.md`](docs/Deployment.md) — production deployment (Caddy + HTTPS)
+- [`docs/PayslipEmailNotification.md`](docs/PayslipEmailNotification.md) — payslip-upload email notification design
 - [`docs/Prompt0.md`](docs/Prompt0.md) — original prompt + decisions
 
 ## Project layout

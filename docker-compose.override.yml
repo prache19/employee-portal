@@ -4,3 +4,23 @@ services:
   frontend:
     ports:
       - "8081:80"
+
+  backend:
+    environment:
+      # Point the backend at the Mailhog container; payslip-upload notifications
+      # land in the Mailhog UI at http://localhost:8025 instead of a real inbox.
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+      SMTP_FROM: "Employee Portal <no-reply@employeeportal.local>"
+      PORTAL_URL: "http://localhost:8081"
+    depends_on:
+      mailhog:
+        condition: service_started
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ep-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI

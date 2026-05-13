@@ -52,7 +52,7 @@ export function PayslipUpload() {
       return (await api.post('/payslips', fd, { headers: { 'Content-Type': 'multipart/form-data' } })).data;
     },
     onSuccess: () => {
-      setMsg({ kind: 'ok', text: 'Payslip uploaded.' });
+      setMsg({ kind: 'ok', text: 'Payslip uploaded — employee notified by email.' });
       setForm({ ...initial });
       qc.invalidateQueries({ queryKey: ['payslips'] });
     },

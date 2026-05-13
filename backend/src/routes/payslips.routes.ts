@@ -9,6 +9,7 @@ import { createPayslipSchema, listPayslipsQuery } from '../schemas/payslip.schem
 import { idParam } from '../schemas/employee.schema.js';
 import { badRequest, forbidden, notFound } from '../lib/httpError.js';
 import { env } from '../config/env.js';
+import { sendPayslipNotification } from '../lib/mailer.js';
 
 const router = Router();
 
@@ -67,7 +68,10 @@ router.post('/', requireRole('HR_ADMIN'), upload.single('pdf'), async (req, res,
     if (!req.file) throw badRequest('PDF file required');
     const parsed = createPayslipSchema.parse(req.body);
 
-    const employee = await prisma.employee.findUnique({ where: { id: parsed.employeeId } });
+    const employee = await prisma.employee.findUnique({
+      where: { id: parsed.employeeId },
+      include: { user: { select: { email: true } } },
+    });
     if (!employee) {
       fs.unlinkSync(req.file.path);
       throw notFound('Employee not found');
@@ -85,6 +89,15 @@ router.post('/', requireRole('HR_ADMIN'), upload.single('pdf'), async (req, res,
         uploadedById: req.user!.sub,
       },
     });
+
+    // Fire-and-forget: don't block the upload response on SMTP.
+    void sendPayslipNotification(
+      employee.user.email,
+      employee.firstName,
+      payslip.month,
+      payslip.year,
+    );
+
     res.status(201).json(payslip);
   } catch (err) {
     if (req.file) {

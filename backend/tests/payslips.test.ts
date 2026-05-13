@@ -1,7 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
+
+vi.mock('../src/lib/mailer.js', () => ({
+  sendPayslipNotification: vi.fn(async () => undefined),
+}));
+
 import { createApp } from '../src/app.js';
 import { createEmployee, createHR, resetDb } from './helpers.js';
+import { sendPayslipNotification } from '../src/lib/mailer.js';
 
 const app = createApp();
 
@@ -20,6 +26,7 @@ describe('payslips', () => {
     await createHR();
     const emp = await createEmployee();
     empId = emp.employee!.id;
+    vi.mocked(sendPayslipNotification).mockClear();
   });
 
   it('HR uploads a payslip for an employee', async () => {
@@ -61,6 +68,45 @@ describe('payslips', () => {
       .set('Authorization', `Bearer ${empToken}`);
     expect(dl.status).toBe(200);
     expect(dl.headers['content-type']).toContain('application/pdf');
+  });
+
+  it('sends a notification email to the employee after a successful upload', async () => {
+    const token = await loginAs('hr@test.com', 'Admin@123');
+    const r = await request(app)
+      .post('/api/payslips')
+      .set('Authorization', `Bearer ${token}`)
+      .field('employeeId', empId)
+      .field('month', '7')
+      .field('year', '2026')
+      .field('grossSalary', '5000')
+      .field('deductions', '1000')
+      .field('netSalary', '4000')
+      .attach('pdf', fakePdf, { filename: 'p.pdf', contentType: 'application/pdf' });
+    expect(r.status).toBe(201);
+
+    expect(sendPayslipNotification).toHaveBeenCalledTimes(1);
+    expect(sendPayslipNotification).toHaveBeenCalledWith(
+      'emp@test.com',
+      'Test',
+      7,
+      2026,
+    );
+  });
+
+  it('does not send a notification when the upload fails (unknown employee)', async () => {
+    const token = await loginAs('hr@test.com', 'Admin@123');
+    const r = await request(app)
+      .post('/api/payslips')
+      .set('Authorization', `Bearer ${token}`)
+      .field('employeeId', 'nonexistent-id')
+      .field('month', '4')
+      .field('year', '2026')
+      .field('grossSalary', '5000')
+      .field('deductions', '1000')
+      .field('netSalary', '4000')
+      .attach('pdf', fakePdf, { filename: 'p.pdf', contentType: 'application/pdf' });
+    expect(r.status).toBe(404);
+    expect(sendPayslipNotification).not.toHaveBeenCalled();
   });
 
   it('employee cannot upload payslips', async () => {
