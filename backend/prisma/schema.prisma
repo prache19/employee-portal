@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Role values: "EMPLOYEE" | "HR_ADMIN" (enforced by zod at the API layer)
+// AssetStatus values: "AVAILABLE" | "ASSIGNED" | "RETIRED" | "IN_REPAIR"
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         String    @default("EMPLOYEE")
+  employee     Employee?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Employee {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime?
+  dateOfJoining DateTime
+  designation   String
+  department    String
+  phone         String?
+  address       String?
+  photoUrl      String?
+  payslips      Payslip[]
+  assets        Asset[]        @relation("CurrentHolder")
+  assetHistory  AssetHistory[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Payslip {
+  id           String   @id @default(cuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  month        Int
+  year         Int
+  grossSalary  Float
+  deductions   Float
+  netSalary    Float
+  pdfPath      String
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  @@unique([employeeId, month, year])
+}
+
+model Asset {
+  id                String         @id @default(cuid())
+  assetTag          String         @unique
+  type              String
+  brand             String
+  model             String
+  serialNumber      String?
+  purchaseDate      DateTime?
+  status            String         @default("AVAILABLE")
+  currentEmployeeId String?
+  currentEmployee   Employee?      @relation("CurrentHolder", fields: [currentEmployeeId], references: [id])
+  assignedAt        DateTime?
+  history           AssetHistory[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model AssetHistory {
+  id         String    @id @default(cuid())
+  assetId    String
+  asset      Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  assignedAt DateTime
+  returnedAt DateTime?
+  notes      String?
+}

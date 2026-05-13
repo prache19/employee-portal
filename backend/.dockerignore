@@ -1,0 +1,11 @@
+node_modules
+dist
+prisma/dev.db
+prisma/dev.db-journal
+prisma/test.db*
+uploads/payslips/*
+!uploads/payslips/.gitkeep
+tests
+.env
+.env.local
+*.log

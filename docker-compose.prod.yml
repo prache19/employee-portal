@@ -1,0 +1,85 @@
+# Production services — use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+services:
+  backend:
+    environment:
+      NODE_ENV: production
+      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
+      # Same-origin behind Caddy: the browser only sees https://${SITE_DOMAIN}.
+      CORS_ORIGIN: "https://${SITE_DOMAIN}"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  frontend:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ep-caddy
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: "${SITE_DOMAIN}"
+      # Clear daemon-injected corporate proxy so Caddy reaches `frontend:80` over the docker network
+      # instead of routing upstream requests through the corporate HTTP proxy.
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: "*"
+      no_proxy: "*"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  db-backup:
+    image: alpine:3.20
+    container_name: ep-db-backup
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      DB_PATH: /data/dev.db
+      BACKUP_DIR: /backups
+      BACKUP_RETENTION_DAYS: "${BACKUP_RETENTION_DAYS:-30}"
+    volumes:
+      - ep_db:/data:ro
+      - ./scripts/db-backup.sh:/usr/local/bin/db-backup.sh:ro
+      - /dbbackup:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache sqlite gzip findutils >/dev/null
+        echo "0 3 * * * /usr/local/bin/db-backup.sh >> /var/log/db-backup.log 2>&1" | crontab -
+        echo "[DB Backup] Cron scheduled: daily 03:00 UTC"
+        touch /var/log/db-backup.log
+        crond -f -l 2
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+volumes:
+  caddy_data:
+  caddy_config:

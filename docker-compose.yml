@@ -1,0 +1,47 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: ep-backend
+    environment:
+      # NODE_ENV=development keeps the refresh-cookie un-secure so it works on
+      # plain http://localhost. For a real prod deployment behind TLS, set this
+      # to "production" and serve the frontend over https.
+      NODE_ENV: development
+      PORT: "4000"
+      DATABASE_URL: "file:/data/dev.db"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret-please-32-chars-min}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret-please-32-chars-min}
+      JWT_ACCESS_TTL: "15m"
+      JWT_REFRESH_TTL: "7d"
+      UPLOAD_DIR: "/app/backend/uploads"
+      # The browser hits nginx on :8080; nginx proxies /api → backend.
+      # CORS therefore needs to accept that origin.
+      CORS_ORIGIN: "http://localhost:8081"
+    volumes:
+      - ep_db:/data
+      - ep_uploads:/app/backend/uploads
+    expose:
+      - "4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: ep-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  ep_db:
+  ep_uploads:

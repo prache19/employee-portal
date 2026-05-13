@@ -1,0 +1,22 @@
+node_modules
+dist
+build
+coverage
+*.log
+.env
+.env.local
+.env.production
+.DS_Store
+
+backend/uploads/payslips/*
+!backend/uploads/payslips/.gitkeep
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/test.db
+backend/prisma/test.db-journal
+backend/tests/.uploads/
+
+# Playwright
+test-results/
+playwright-report/
+.playwright/

@@ -1,0 +1,6 @@
+# Dev overrides — auto-loaded by `docker compose up`
+# Production skips this file: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  frontend:
+    ports:
+      - "8081:80"
