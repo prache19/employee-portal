@@ -25,9 +25,10 @@ RUN apt-get update -y \
   && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled backend + node_modules (includes prisma client + tsx for seed)
+# Copy compiled backend + hoisted node_modules (npm workspaces hoist all deps
+# to /app/node_modules; nothing lives at /app/backend/node_modules). Prisma
+# client and tsx are resolved via Node's parent module lookup at runtime.
 COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/backend/node_modules ./node_modules
 COPY --from=build /app/backend/dist ./dist
 COPY --from=build /app/backend/prisma ./prisma
 COPY --from=build /app/backend/package.json ./
